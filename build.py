@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 Build script for krsHubSwap
-Compiles Java files and creates JAR archive
+Compiles Java files and creates JAR archive without using jar command
 """
 
 import os
 import sys
 import subprocess
-import shutil
+import zipfile
 from pathlib import Path
 
 def main():
@@ -59,30 +59,26 @@ def main():
         print(e.stderr)
         return 1
     
-    # Create JAR file
+    # Create JAR file using Python zipfile (no jar command needed)
     print("\nCreating JAR file...")
     jar_file = libs_dir / "krshubswap-1.0.0.jar"
     
-    jar_cmd = [
-        "jar",
-        "cvf",
-        str(jar_file),
-        "-C", str(classes_dir),
-        "ru"
-    ]
-    
     try:
-        result = subprocess.run(jar_cmd, check=True, capture_output=True, text=True)
-        if result.stdout:
-            print(result.stdout)
+        with zipfile.ZipFile(jar_file, 'w', zipfile.ZIP_DEFLATED) as jar:
+            # Walk through classes directory and add all .class files
+            for root, dirs, files in os.walk(classes_dir):
+                for file in files:
+                    if file.endswith('.class'):
+                        file_path = Path(root) / file
+                        # Calculate the archive name (relative path from classes_dir)
+                        arcname = file_path.relative_to(classes_dir)
+                        jar.write(file_path, arcname)
+                        print(f"  adding {arcname}")
+        
         print("✓ JAR creation successful")
-    except FileNotFoundError:
-        print("ERROR: jar not found!")
-        print("Please install Java JDK from: https://www.oracle.com/java/technologies/downloads/")
-        return 1
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         print("ERROR: JAR creation failed!")
-        print(e.stderr)
+        print(str(e))
         return 1
     
     # Success message
