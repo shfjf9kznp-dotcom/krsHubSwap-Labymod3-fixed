@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "krshubswap",
+  "version": "${version}",
+  "name": "KrsHubSwap",
+  "description": "Quick hub swap addon for Laby Anarchies",
+  "authors": [
+    "krosovok"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "ru.krosovok.krshubswap.client.KrshubswapClient"
+    ],
+    "main": [
+      "ru.krosovok.krshubswap.KrsHubSwap"
+    ]
+  },
+  "mixins": [],
+  "depends": {
+    "fabricloader": ">=0.7.4",
+    "minecraft": "~1.16.5",
+    "fabric-api": "*"
+  }
+}

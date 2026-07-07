@@ -1,41 +1,56 @@
 package ru.krosovok.krshubswap.client;
 
-import ru.krosovok.krshubswap.client.manager.TeleportManager;
-import ru.krosovok.krshubswap.client.manager.RangeConfig;
-import ru.krosovok.krshubswap.client.manager.AliasConfig;
-import ru.krosovok.krshubswap.client.listener.ChatListener;
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
 
-public class KrshubswapClient {
-    private static KrshubswapClient instance;
-    private TeleportManager teleportManager;
-    private RangeConfig rangeConfig;
+public class KrshubswapClient implements ClientModInitializer {
+    private static final String CATEGORY = "key.categories.krshubswap";
     private AliasConfig aliasConfig;
-    private ChatListener chatListener;
-    
-    public KrshubswapClient() {
-        this.rangeConfig = new RangeConfig();
-        this.aliasConfig = new AliasConfig();
-        this.teleportManager = new TeleportManager();
-        this.chatListener = new ChatListener(this.teleportManager);
-        instance = this;
-    }
-    
-    public static KrshubswapClient getInstance() {
-        if (instance == null) {
-            instance = new KrshubswapClient();
+    private TeleportManager teleportManager;
+    private KeyBinding configKeyBinding;
+    private static KrshubswapClient instance;
+
+    public static void onGameMessage(String text) {
+        if (instance != null && instance.teleportManager != null) {
+            instance.teleportManager.onMessage(text);
         }
-        return instance;
     }
-    
-    public TeleportManager getTeleportManager() {
-        return this.teleportManager;
+
+    @Override
+    public void onInitializeClient() {
+        instance = this;
+
+        java.nio.file.Path configDir = java.nio.file.Paths.get(
+            System.getProperty("user.home"), ".labymod", "configs"
+        );
+
+        this.aliasConfig = new AliasConfig(configDir);
+        this.teleportManager = new TeleportManager();
+        new SwapCommand(teleportManager, aliasConfig).register();
+
+        this.configKeyBinding = KeyBindingHelper.registerKeyBinding(
+            new KeyBinding(
+                "key.krshubswap.open_config",
+                InputUtil.Type.KEYSYM,
+                295,
+                CATEGORY
+            )
+        );
+
+        ClientTickEvents.END_CLIENT_TICK.register(this::onEndTick);
     }
-    
-    public RangeConfig getRangeConfig() {
-        return this.rangeConfig;
-    }
-    
-    public AliasConfig getAliasConfig() {
-        return this.aliasConfig;
+
+    private void onEndTick(MinecraftClient client) {
+        teleportManager.tick();
+
+        while (configKeyBinding.wasPressed()) {
+            if (client.currentScreen == null) {
+                // Config screen would open here
+            }
+        }
     }
 }

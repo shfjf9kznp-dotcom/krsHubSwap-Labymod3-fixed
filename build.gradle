@@ -1,36 +1,62 @@
 plugins {
+    id 'fabric-loom' version '0.12.45'
+    id 'maven-publish'
     id 'java'
 }
 
-group = 'ru.krosovok'
-version = '1.0.0'
-archivesBaseName = 'krshubswap'
+sourceCompatibility = JavaVersion.VERSION_16
+targetCompatibility = JavaVersion.VERSION_16
+
+archivesBaseName = project.mod_name
+version = project.mod_version
+group = project.maven_group
 
 repositories {
     mavenCentral()
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    maven { url = 'https://maven.fabricmc.net/' }
+    maven { url = 'https://maven.mojang.com' }
 }
 
 dependencies {
-    implementation 'com.google.code.gson:gson:2.8.9'
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 }
 
-jar {
-    manifest {
-        attributes 'Implementation-Title': 'krsHubSwap',
-                   'Implementation-Version': version
+processResources {
+    inputs.property "version", project.version
+    filteringCharset = "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
     }
 }
 
-task fatJar(type: Jar) {
-    archiveClassifier = ''
-    from sourceSets.main.output
-    dependsOn configurations.runtimeClasspath
-    from {
-        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 16
+}
+
+java {
+    withSourcesJar()
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.archivesBaseName}" }
+    }
+}
+
+publishingPublications {
+    mavenJava(MavenPublication) {
+        groupId = project.maven_group
+        artifactId = project.archives_base_name
+        version = project.version
+        artifact(remapJar) {
+            builtBy remapJar
+        }
+        artifact(sourcesJar) {
+            builtBy remapSourcesJar
+        }
     }
 }

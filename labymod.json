@@ -1,0 +1,9 @@
+{
+  "name": "KrsHubSwap",
+  "version": "1.0.0",
+  "author": "krosovok",
+  "description": "Quick hub swap addon for Laby Anarchies",
+  "category": "MISC",
+  "icon": "https://via.placeholder.com/64",
+  "requires": []
+}

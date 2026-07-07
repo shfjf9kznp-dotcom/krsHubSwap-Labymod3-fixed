@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Build script for krsHubSwap
-Compiles Java files and creates JAR archive without using jar command
+Build script for krsHubSwap Fabric Mod
+Compiles Java files and creates JAR archive
 """
 
 import os
@@ -11,81 +11,36 @@ import zipfile
 from pathlib import Path
 
 def main():
-    print("Building krsHubSwap...")
+    print("Building KrsHubSwap Fabric Mod...")
     
-    # Define paths
-    src_dir = Path("src/main/java")
-    build_dir = Path("build")
-    classes_dir = build_dir / "classes"
-    libs_dir = build_dir / "libs"
+    # Check if gradle exists
+    if sys.platform == "win32":
+        gradle_cmd = "gradlew.bat"
+    else:
+        gradle_cmd = "./gradlew"
     
-    # Java files to compile
-    java_files = [
-        "ru/krosovok/krshubswap/client/manager/RangeConfig.java",
-        "ru/krosovok/krshubswap/client/manager/AliasConfig.java",
-        "ru/krosovok/krshubswap/client/manager/TeleportManager.java",
-        "ru/krosovok/krshubswap/client/listener/ChatListener.java",
-        "ru/krosovok/krshubswap/client/command/SwapCommand.java",
-        "ru/krosovok/krshubswap/client/KrshubswapClient.java",
-        "ru/krosovok/krshubswap/KrsHubSwap.java",
-    ]
+    # Download gradlew if not exists
+    if not os.path.exists(gradle_cmd):
+        print("Downloading gradle wrapper...")
+        os.system("gradle wrapper --gradle-version 7.3")
     
-    # Create directories
-    print("\nCreating directories...")
-    classes_dir.mkdir(parents=True, exist_ok=True)
-    libs_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Compile Java files
-    print("\nCompiling Java files...")
-    java_file_paths = [str(src_dir / f) for f in java_files]
-    
-    javac_cmd = [
-        "javac",
-        "-d", str(classes_dir),
-        "-sourcepath", str(src_dir),
-    ] + java_file_paths
-    
+    # Build using gradle
+    print("\nBuilding with Gradle...")
     try:
-        result = subprocess.run(javac_cmd, check=True, capture_output=True, text=True)
-        if result.stdout:
-            print(result.stdout)
-        print("✓ Compilation successful")
+        result = subprocess.run([gradle_cmd, "build"], check=True)
+        if result.returncode == 0:
+            print("\n" + "="*50)
+            print("Build completed successfully!")
+            print("JAR file: build/libs/krshubswap-1.0.0.jar")
+            print("="*50)
+            return 0
     except FileNotFoundError:
-        print("ERROR: javac not found!")
-        print("Please install Java JDK from: https://www.oracle.com/java/technologies/downloads/")
+        print("ERROR: Gradle not found!")
+        print("Please install Gradle or use: gradle wrapper --gradle-version 7.3")
         return 1
     except subprocess.CalledProcessError as e:
-        print("ERROR: Compilation failed!")
-        print(e.stderr)
+        print(f"ERROR: Build failed with code {e.returncode}")
         return 1
-    
-    # Create JAR file using Python zipfile (no jar command needed)
-    print("\nCreating JAR file...")
-    jar_file = libs_dir / "krshubswap-1.0.0.jar"
-    
-    try:
-        with zipfile.ZipFile(jar_file, 'w', zipfile.ZIP_DEFLATED) as jar:
-            # Walk through classes directory and add all .class files
-            for root, dirs, files in os.walk(classes_dir):
-                for file in files:
-                    if file.endswith('.class'):
-                        file_path = Path(root) / file
-                        # Calculate the archive name (relative path from classes_dir)
-                        arcname = file_path.relative_to(classes_dir)
-                        jar.write(file_path, arcname)
-                        print(f"  adding {arcname}")
-        
-        print("✓ JAR creation successful")
-    except Exception as e:
-        print("ERROR: JAR creation failed!")
-        print(str(e))
-        return 1
-    
-    # Success message
-    print("\n" + "="*50)
-    print("Build completed successfully!")
-    print(f"JAR file: {jar_file}")
-    print("="*50)
     
     return 0
 
